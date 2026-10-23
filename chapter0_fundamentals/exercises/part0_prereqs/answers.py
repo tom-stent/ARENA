@@ -71,7 +71,84 @@ arr8 = einops.reduce(
 )
 display_array_as_img(arr8)
 
-##%%
+#%%
+
+print(t.arange(3, 9))
+
+#%%
 # Broadcasting
 
+def rearrange_1() -> Tensor:
+    """Return the following tensor using only t.arange and einops.rearrange:
+
+    [[3, 4],
+     [5, 6],
+     [7, 8]]
+    """
+
+    return einops.rearrange(t.arange(3, 9), "(r c) -> r c", r=3)
+
+
+tests.test_rearrange_1(rearrange_1)
+
+
 # %%
+
+def rearrange_2() -> Tensor:
+    """Return the following tensor using only t.arange and einops.rearrange:
+
+    [[1, 2, 3],
+     [4, 5, 6]]
+    """
+
+    return einops.rearrange(t.arange(1, 7), "(r c) -> r c", r=2)
+
+tests.test_rearrange_2(rearrange_2)
+
+
+# %%
+
+def temperatures_average(temps: Tensor) -> Tensor:
+    """Return the average temperature for each week.
+
+    temps: a 1D temperature containing temperatures for each day.
+    Length will be a multiple of 7 and the first 7 days are for the first week, second 7 days for the second week, etc.
+
+    You can do this with a single call to reduce.
+    """
+    assert len(temps) % 7 == 0
+
+    return einops.reduce(temps, "(w 7) -> w", "mean")
+
+
+tests.test_temperatures_average(temperatures_average)
+
+# %%
+
+def temperatures_differences(temps: Tensor) -> Tensor:
+    """For each day, subtract the average for the week the day belongs to.
+
+    temps: as above
+    """
+    assert len(temps) % 7 == 0
+
+    avg = einops.reduce(temps, "(w 7) -> w", "mean")
+    return temps - einops.repeat(avg, "w -> (w 7)")
+
+
+tests.test_temperatures_differences(temperatures_differences)
+
+
+# %%
+
+def temperatures_normalized(temps: Tensor) -> Tensor:
+    """For each day, subtract the weekly average and divide by the weekly standard deviation.
+
+    temps: as above
+
+    Pass t.std to reduce.
+    """
+    raise NotImplementedError()
+
+
+tests.test_temperatures_normalized(temperatures_normalized)
