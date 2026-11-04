@@ -148,7 +148,57 @@ def temperatures_normalized(temps: Tensor) -> Tensor:
 
     Pass t.std to reduce.
     """
-    raise NotImplementedError()
 
+    avg = einops.reduce(temps, "(w 7) -> w", "mean")
+    std = einops.rearrange(temps, "(w d) -> w d", d=7).std(dim=-1)
+
+    return (temps - einops.repeat(avg, "w -> (w 7)")) / einops.repeat(std, "w -> (w 7)")
 
 tests.test_temperatures_normalized(temperatures_normalized)
+
+# %%
+
+def normalize_rows(matrix: Tensor) -> Tensor:
+    """Normalize each row of the given 2D matrix.
+
+    matrix: a 2D tensor of shape (m, n).
+
+    Returns: a tensor of the same shape where each row is divided by its l2 norm.
+    """
+
+    return matrix / t.norm(matrix, dim=1, keepdim=True)
+
+
+tests.test_normalize_rows(normalize_rows)
+
+# %%
+
+def cos_sim_matrix(matrix: Tensor) -> Tensor:
+    """Return the cosine similarity matrix for each pair of rows of the given matrix.
+
+    matrix: shape (m, n)
+    """
+
+    matrix_normalised = normalize_rows(matrix)
+    return matrix_normalised @ matrix_normalised.T
+
+
+tests.test_cos_sim_matrix(cos_sim_matrix)
+
+
+# %%
+
+def sample_distribution(probs: Tensor, n: int) -> Tensor:
+    """Return n random samples from probs, where probs is a normalized probability distribution.
+
+    probs: shape (k,) where probs[i] is the probability of event i occurring.
+    n: number of random samples
+
+    Return: shape (n,) where out[i] is an integer indicating which event was sampled.
+
+    Use t.rand and t.cumsum to do this without any explicit loops.
+    """
+    raise NotImplementedError()
+
+tests.test_sample_distribution(sample_distribution)
+# %%
