@@ -198,7 +198,106 @@ def sample_distribution(probs: Tensor, n: int) -> Tensor:
 
     Use t.rand and t.cumsum to do this without any explicit loops.
     """
-    raise NotImplementedError()
+    assert abs(probs.sum() - 1.0) < 0.001
+    assert (probs >= 0).all()
+
+    return (t.rand(n, 1) > t.cumsum(probs, dim=0)).sum(dim=1)  
 
 tests.test_sample_distribution(sample_distribution)
+
+
+# %%
+
+def classifier_accuracy(scores: Tensor, true_classes: Tensor) -> Tensor:
+    """Return the fraction of inputs for which the maximum score corresponds to the true class for that input.
+
+    scores: shape (batch, n_classes). A higher score[b, i] means that the classifier thinks class i is more likely.
+    true_classes: shape (batch, ). true_classes[b] is an integer from [0...n_classes).
+
+    Use t.argmax.
+    """
+    return (scores.argmax(dim=1) == true_classes).float().mean()
+
+
+tests.test_classifier_accuracy(classifier_accuracy)
+
+
+# %%
+
+def total_price_indexing(prices: Tensor, items: Tensor) -> float:
+    """Given prices for each kind of item and a tensor of items purchased, return the total price.
+
+    prices: shape (k, ). prices[i] is the price of the ith item.
+    items: shape (n, ). A 1D tensor where each value is an item index from [0..k).
+
+    Use integer array indexing. The below document describes this for NumPy but it's the same in PyTorch:
+
+    https://numpy.org/doc/stable/user/basics.indexing.html#integer-array-indexing
+    """
+
+    return prices[items].sum().item()
+
+tests.test_total_price_indexing(total_price_indexing)
+
+
+# %%
+
+def gather_2d(matrix: Tensor, indexes: Tensor) -> Tensor:
+    """Perform a gather operation along the second dimension.
+
+    matrix: shape (m, n)
+    indexes: shape (m, k)
+
+    Return: shape (m, k). out[i][j] = matrix[i][indexes[i][j]]
+
+    For this problem, the test already passes and it's your job to write at least three asserts relating the arguments and the output. This is a tricky function and worth spending some time to wrap your head around its behavior.
+
+    See: https://pytorch.org/docs/stable/generated/torch.gather.html?highlight=gather#torch.gather
+    """
+    assert len(matrix.shape) == len(indexes.shape) == 2
+    assert matrix.shape[0] == indexes.shape[0]
+    assert indexes.max().item() <= matrix.shape[1]
+    assert indexes.min().item() >= 0
+ 
+    out = matrix.gather(1, indexes)
+
+    assert out.shape == indexes.shape
+
+    return out
+
+
+tests.test_gather_2d(gather_2d)
+
+
+# %%
+
+def total_price_gather(prices: Tensor, items: Tensor) -> float:
+    """Compute the same as total_price_indexing, but use torch.gather."""
+    assert items.max() < prices.shape[0]
+
+    return (t.gather(prices, dim=0, index=items)).sum().item()
+
+
+tests.test_total_price_gather(total_price_gather)
+
+
+# %%
+
+def integer_array_indexing(matrix: Tensor, coords: Tensor) -> Tensor:
+    """Return the values at each coordinate using integer array indexing.
+
+    For details on integer array indexing, see:
+    https://numpy.org/doc/stable/user/basics.indexing.html#integer-array-indexing
+
+    matrix: shape (d_0, d_1, ..., d_n)
+    coords: shape (batch, n)
+
+    Return: (batch, )
+    """
+
+    return matrix[tuple(coords.T)]
+
+
+tests.test_integer_array_indexing(integer_array_indexing)
+
 # %%
